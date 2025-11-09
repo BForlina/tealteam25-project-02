@@ -1,0 +1,50 @@
+
+name: File Check (Beta)
+
+# Runs every time a Pull Request targets the main branch
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check-required-files:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Get your repo files
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      # Run your file checker
+      - name: Run Python file check
+        run: python3 check_required_files.py
+
+      # Configure AWS (credentials come from GitHub Secrets)
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # Send log to CloudWatch
+      - name: Send success log to AWS CloudWatch
+        run: |
+          LOG_GROUP="/github-actions/required-files-checker/beta"
+          LOG_STREAM=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
+          MESSAGE=" Beta check passed | Commit: ${{ github.sha }} | By: ${{ github.actor }}"
+
+          # Create the group/stream if they don't exist, then send one log
+          aws logs create-log-group --log-group-name "$LOG_GROUP" || true
+          aws logs create-log-stream --log-group-name "$LOG_GROUP" --log-stream-name "$LOG_STREAM"
+          aws logs put-log-events \
+            --log-group-name "$LOG_GROUP" \
+            --log-stream-name "$LOG_STREAM" \
+            --log-events timestamp=$(date +%s000),message="$MESSAGE"
