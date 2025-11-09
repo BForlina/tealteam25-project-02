@@ -39,7 +39,7 @@ jobs:
         run: |
           LOG_GROUP="/github-actions/required-files-checker/prod"
           LOG_STREAM=$(date -u +"%Y-%m-%dT%H-%M-%SZ")
-          MESSAGE="🚀 Production merge passed | Commit: ${{ github.sha }} | By: ${{ github.actor }}"
+          MESSAGE=" Production merge passed | Commit: ${{ github.sha }} | By: ${{ github.actor }}"
 
           aws logs create-log-group --log-group-name "$LOG_GROUP" || true
           aws logs create-log-stream --log-group-name "$LOG_GROUP" --log-stream-name "$LOG_STREAM"
